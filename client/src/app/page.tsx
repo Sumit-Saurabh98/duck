@@ -1,3 +1,4 @@
+"use client"
 import FeedCard from "@/components/FeedCard";
 import React from "react";
 import { BiHash, BiHomeCircle, BiUser } from "react-icons/bi";
@@ -6,6 +7,7 @@ import { GiDuck } from "react-icons/gi";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { GoogleLogin } from "@react-oauth/google";
 
 interface DuctSidebarButton {
   title: string;
@@ -104,6 +106,14 @@ export default function Home() {
               </Button>
             </div>
           </div>
+          <GoogleLogin
+            onSuccess={(credentialResponse) => {
+              console.log(credentialResponse);
+            }}
+            onError={() => {
+              console.log("Login Failed");
+            }}
+          />
         </aside>
       </div>
       <nav className="lg:hidden fixed bottom-0 w-full bg-gray-800 flex justify-around items-center py-2">
@@ -114,7 +124,6 @@ export default function Home() {
             className="flex flex-col items-center gap-1 px-3 py-2 rounded-full hover:bg-gray-700 transition-colors duration-200"
           >
             <span className="text-2xl">{item.icon}</span>
-            <span className="text-sm font-medium">{item.title}</span>
           </a>
         ))}
       </nav>
