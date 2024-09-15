@@ -1,8 +1,8 @@
-"use client"
+"use client";
 import FeedCard from "@/components/FeedCard";
 import React, { useCallback } from "react";
 import { BiHash, BiHomeCircle, BiUser } from "react-icons/bi";
-import { BsBell, BsBookmark, BsEnvelope } from "react-icons/bs";
+import { BsBell, BsBookmark, BsEnvelope, BsThreeDots } from "react-icons/bs";
 import { GiDuck } from "react-icons/gi";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
@@ -11,6 +11,8 @@ import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
 import { graphqlClient } from "../../clients/api";
 import { verifyUserGoogleTokenQuery } from "../../graphql/query/user";
+import { useCurrentUser } from "../../hooks/user";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface DuctSidebarButton {
   title: string;
@@ -45,25 +47,36 @@ const sidebarMenuItems: DuctSidebarButton[] = [
 ];
 
 export default function Home() {
+  const { user } = useCurrentUser();
+  const queryClient = useQueryClient();
 
-const handleLoginWithGoogle = useCallback(async (cred: CredentialResponse) => {
-  const googleToken = cred.credential;
+  console.log(user);
 
-  if (!googleToken) {
-    toast.error(`Google token not found`);
-    return;
-  }
+  const handleLoginWithGoogle = useCallback(
+    async (cred: CredentialResponse) => {
+      const googleToken = cred.credential;
 
-  const {verifyGoogleToken} = await graphqlClient.request(verifyUserGoogleTokenQuery, {token: googleToken})
+      if (!googleToken) {
+        toast.error(`Google token not found`);
+        return;
+      }
 
-  toast.success("Verified Success")
-  console.log(verifyGoogleToken)
+      const { verifyGoogleToken } = await graphqlClient.request(
+        verifyUserGoogleTokenQuery,
+        { token: googleToken }
+      );
 
-  if(verifyGoogleToken){
-    window.localStorage.setItem("__duck_Auth_Token", verifyGoogleToken)
-  }
+      toast.success("Verified Success");
+      console.log(verifyGoogleToken);
 
-}, []);
+      if (verifyGoogleToken) {
+        window.localStorage.setItem("__duck_Auth_Token", verifyGoogleToken);
+
+        await queryClient.invalidateQueries({ queryKey: ["current-user"] });
+      }
+    },
+    [queryClient]
+  );
 
   return (
     <div className="min-h-screen text-white">
@@ -92,7 +105,23 @@ const handleLoginWithGoogle = useCallback(async (cred: CredentialResponse) => {
               Duck
             </button>
           </nav>
+          {user && user.profileImageURL && (
+            <div className="absolute bottom-2 right-4 flex justify-center items-center gap-3 bg-gray-700 rounded-full px-4 py-2">
+              {user && user.profileImageURL && (
+                <Image
+                  className="rounded-full"
+                  src={user.profileImageURL}
+                  alt={user.firstName || "Profile picture"}
+                  width={40}
+                  height={40}
+                />
+              )}
+              <p className="text-md font-bold">{user.firstName}</p>
+              <BsThreeDots className="text-xl" />
+            </div>
+          )}
         </aside>
+
         <main className="border-t flex-grow border-x gap-1 border-gray-700 rounded-lg min-h-screen">
           <div className="bg-black sticky top-0 z-10 w-full flex justify-evenly items-center text-center text-xl">
             <div className="w-[50%] h-10 sm:h-8 hover:bg-gray-600 cursor-pointer">
@@ -129,12 +158,16 @@ const handleLoginWithGoogle = useCallback(async (cred: CredentialResponse) => {
               </Button>
             </div>
           </div>
-          <GoogleLogin
-            onSuccess={handleLoginWithGoogle}
-            onError={() => {
-              console.log("Login Failed");
-            }}
-          />
+          {!user && (
+            <div className="border-2 flex justify-center items-center border-gray-700 rounded-2xl">
+              <GoogleLogin
+                onSuccess={handleLoginWithGoogle}
+                onError={() => {
+                  console.log("Login Failed");
+                }}
+              />
+            </div>
+          )}
         </aside>
       </div>
       <nav className="lg:hidden fixed bottom-0 w-full bg-gray-800 flex justify-around items-center py-2">
@@ -147,15 +180,30 @@ const handleLoginWithGoogle = useCallback(async (cred: CredentialResponse) => {
             <span className="text-2xl">{item.icon}</span>
           </a>
         ))}
-        <GoogleLogin
-            type="icon"
-              onSuccess={(credentialResponse) => {
-              console.log(credentialResponse);
-            }}
-            onError={() => {
-              console.log("Login Failed");
-            }}
-          />
+        {!user ? (
+          <div className="">
+            <GoogleLogin
+              type="icon"
+              onSuccess={handleLoginWithGoogle}
+              onError={() => {
+                console.log("Login Failed");
+              }}
+            />
+          </div>
+        ) : (
+          user &&
+          user.profileImageURL && (
+            <div className="flex justify-center items-center rounded-full">
+              <Image
+                className="rounded-full"
+                src={user.profileImageURL}
+                alt={user.firstName || "Profile picture"}
+                width={40}
+                height={40}
+              />
+            </div>
+          )
+        )}
       </nav>
     </div>
   );
