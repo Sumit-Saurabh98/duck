@@ -13,6 +13,7 @@ import { graphqlClient } from "../../clients/api";
 import { verifyUserGoogleTokenQuery } from "../../graphql/query/user";
 import { useCurrentUser } from "../../hooks/user";
 import { useQueryClient } from "@tanstack/react-query";
+import { CiImageOn } from "react-icons/ci";
 
 interface DuctSidebarButton {
   title: string;
@@ -78,6 +79,13 @@ export default function Home() {
     [queryClient]
   );
 
+  const handleFileSelect = useCallback(()=>{
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+  }, [])
+
   return (
     <div className="min-h-screen text-white">
       <div className="container mx-auto px-4 lg:px-8 xl:px-16 flex flex-col lg:flex-row">
@@ -123,7 +131,7 @@ export default function Home() {
         </aside>
 
         <main className="border-t flex-grow border-x gap-1 border-gray-700 rounded-lg min-h-screen">
-          <div className="bg-black sticky top-0 z-10 w-full flex justify-evenly items-center text-center text-xl">
+          <div className="bg-transparent sticky top-0 z-10 w-full flex justify-evenly items-center text-center text-xl">
             <div className="w-[50%] h-10 sm:h-8 hover:bg-gray-600 cursor-pointer">
               <button>For You</button>
             </div>
@@ -132,7 +140,31 @@ export default function Home() {
               <button>Following</button>
             </div>
           </div>
-          {/* Your FeedCard components here */}
+          <div className="px-20 py-4 gap-0 items-baseline relative">
+            {user && user.profileImageURL && (
+              <Image
+                className="rounded-full absolute top-8 left-10"
+                src={user.profileImageURL}
+                alt={user.firstName || "Profile picture"}
+                width={40}
+                height={40}
+              />
+            )}
+            <textarea
+              className="w-full border-b-2 px-2 py-6 mb-4 bg-transparent placeholder:font-bold text-xl"
+              placeholder="What's happening?!"
+            ></textarea>
+            <div className="flex justify-between items-center">
+              <CiImageOn className="text-4xl hover:cursor-pointer" onClick={handleFileSelect} />
+              <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full transition-colors duration-200">
+                Duck
+              </button>
+            </div>
+          </div>
+          <FeedCard />
+          <FeedCard />
+          <FeedCard />
+          <FeedCard />
           <FeedCard />
           <FeedCard />
           <FeedCard />
