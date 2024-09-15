@@ -1,13 +1,16 @@
 "use client"
 import FeedCard from "@/components/FeedCard";
-import React from "react";
+import React, { useCallback } from "react";
 import { BiHash, BiHomeCircle, BiUser } from "react-icons/bi";
 import { BsBell, BsBookmark, BsEnvelope } from "react-icons/bs";
 import { GiDuck } from "react-icons/gi";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { GoogleLogin } from "@react-oauth/google";
+import { CredentialResponse, GoogleLogin } from "@react-oauth/google";
+import toast from "react-hot-toast";
+import { graphqlClient } from "../../clients/api";
+import { verifyUserGoogleTokenQuery } from "../../graphql/query/user";
 
 interface DuctSidebarButton {
   title: string;
@@ -42,6 +45,26 @@ const sidebarMenuItems: DuctSidebarButton[] = [
 ];
 
 export default function Home() {
+
+const handleLoginWithGoogle = useCallback(async (cred: CredentialResponse) => {
+  const googleToken = cred.credential;
+
+  if (!googleToken) {
+    toast.error(`Google token not found`);
+    return;
+  }
+
+  const {verifyGoogleToken} = await graphqlClient.request(verifyUserGoogleTokenQuery, {token: googleToken})
+
+  toast.success("Verified Success")
+  console.log(verifyGoogleToken)
+
+  if(verifyGoogleToken){
+    window.localStorage.setItem("__duck_Auth_Token", verifyGoogleToken)
+  }
+
+}, []);
+
   return (
     <div className="min-h-screen text-white">
       <div className="container mx-auto px-4 lg:px-8 xl:px-16 flex flex-col lg:flex-row">
@@ -107,9 +130,7 @@ export default function Home() {
             </div>
           </div>
           <GoogleLogin
-            onSuccess={(credentialResponse) => {
-              console.log(credentialResponse);
-            }}
+            onSuccess={handleLoginWithGoogle}
             onError={() => {
               console.log("Login Failed");
             }}
@@ -126,6 +147,15 @@ export default function Home() {
             <span className="text-2xl">{item.icon}</span>
           </a>
         ))}
+        <GoogleLogin
+            type="icon"
+              onSuccess={(credentialResponse) => {
+              console.log(credentialResponse);
+            }}
+            onError={() => {
+              console.log("Login Failed");
+            }}
+          />
       </nav>
     </div>
   );
