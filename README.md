@@ -1,1 +1,1 @@
-# duck
+# duck - A social media app
